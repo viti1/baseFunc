@@ -1,0 +1,75 @@
+%-------------------------------------------------------
+% [rec, info] = ReadRecord(file_or_folder,nOfFrames, startFrame)
+
+% Input : 
+%   file_or_folder - full path of folder with .tiff/.tif files or single .avi file, 
+%                    or full path of .avi/.tif/.tiff file.
+%                    Assuming gray scale image.
+%   
+%   nOfFrames  - [optional] read this number of frames. defualt = Inf
+%   startFrame - [optional] first frame to read. default = 1
+%
+% Output : 
+%   rec  - 3D matrix with the record, double
+%   info - struct with three fields:
+%          filename - parameters from filename
+%          cam      - struct of the camera input parameters  
+%          setup    - setup parameters as passed by the user to RecordFromCamera 
+%
+%-------------------------------------------------------
+function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
+    
+    %% Check input parameters
+    if ~exist(recName,'file')
+        error(['Record ''' recName ''' do not exist!'])
+    end
+    
+    if ~exist('nOfFrames','var') || isempty(nOfFrames)
+        nOfFrames = Inf ; % read all record
+    end
+
+    if ~exist('startFrame','var') || isempty(startFrame)
+        startFrame = 1 ; % read all record
+    end
+    
+    %% Read Record
+    if exist(recName,'file') == 7 % it's a folder
+        folderpath = recName;
+        % find all .tiff or .tif files
+        tiff_files = [ dir([folderpath, '\*.tiff']) , dir([folderpath, '\*.tif']) ];
+        avi_files  = dir([folderpath, '\*.avi']) ;
+        if isempty(tiff_files) && isempty(avi_files)
+            error(['There are no ''.tiff'' or ''.avi'' files in input folder ''' folderpath '''']);
+        elseif ~isempty(tiff_files) && ~isempty(avi_files)
+            error([ '''' folderpath ''' contains both ''.tiff'' or ''.avi'' files. It must contain only one the the file types ' ]);        
+        elseif ~isempty(avi_files)
+            if numel(avi_files) > 1
+                error([ '"' folderpath '" must contain only one .avi file but contains ' num2str(numel(avi_files)) ' files.']);
+            end
+            rec  = Avi2Matrix( fullfile(folderpath,avi_files.name) ,nOfFrames , startFrame);            
+        elseif ~isempty(tiff_files)
+            rec = Tiff2Matrix(folderpath,nOfFrames,startFrame);
+            
+        end
+    else % it's a file    
+        [~, ~ , ext] = fileparts(recName);
+        if strcmp(ext,'.avi')
+            rec = Avi2Matrix( recName ,nOfFrames , startFrame);
+        elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
+            t = Tiff(recName,'r');
+            rec = read(t);
+            close(t);
+            rec = rec(:,:,startFrame:startFrame+nOfFrames-1);
+        else
+            error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
+        end
+    end
+
+    rec = double(rec);
+    %% Read Info
+    if nargout > 1
+        info = GetRecordInfo(recName); 
+    end
+end
+
+
