@@ -1,4 +1,4 @@
-%% [ rec, filename , info ] = RecordFromCamera(nOfFrames,camParams,setupParams,folder,saveFormat,prefix,suffix,forceWrite,plotFlag,vid)
+%% [ rec, filename , info ] = RecordFromCamera ( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, forceWrite, plotFlag, vid )
 % Input : 
 %   nOfFrames - desired number of frames. default = 1
 
@@ -36,8 +36,7 @@
 %   filename - output full file name (including path)
 % ``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
-function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat,...
-                                                     prefix, suffix, forceWrite, plotFlag, vid )
+function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, forceWrite, plotFlag, vid )
 
 %% Check functin input parameters and set defualt values for missing parameters
 
@@ -45,7 +44,7 @@ if ~exist('nOfFrames','var') || isempty(nOfFrames)
     nOfFrames = 1;
 end
  
-if ~exist('camParams','var') || isempty(setupParams)
+if ~exist('camParams','var') || isempty(camParams)
     camParams = struct();
 elseif ~isstruct(camParams)
     error('camParams shold be a struct!')
@@ -116,7 +115,6 @@ else
     videoFormat = camParams.videoFormat;
 end
 
-
 if createVid
     vid = videoinput("gentl", 1, videoFormat);
 end
@@ -133,7 +131,7 @@ if ~all(ismember(camInputFields,camOriginalFields))
     badFields = strjoin(camInputFields(~ismember(camInputFields,camOriginalFields)));
     stop(vid)
     delete(vid)
-    error(['camParams should have only legit fields for camera src struct.\n The following field are not exceptable :' badFields ])
+    error(['camParams should have only legit fields for camera src struct. The following field are not exceptable :' badFields ])
 end
 
 % set camera parameters
@@ -150,7 +148,7 @@ if ~isempty(camInputFields)
 end
 
 %% Create filename from Parameters Structs 
-[filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite);
+[filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src);
 
 
 %% Create info struct
@@ -158,7 +156,7 @@ if isfield(camParams,'addToFilename'); camParams = rmfield(camParams,'addToFilen
 if isfield(setupParams,'addToFilename'); setupParams = rmfield(setupParams,'addToFilename'); end
 
 info.cam = camParams; % TBD consider using only user requested + expT,Gain,FR,BL
-mustFieldsToSave = {'ExposureTime','AcquisitionFrameRate','BlackLevel','Gain'} ;
+mustFieldsToSave = {'Gain','ExposureTime','BlackLevel','AcquisitionFrameRate'} ;
 for field = mustFieldsToSave(:)'
     if ~isfield(camParams,field{1})
         info.cam.(field{1})= src.(field{1});
@@ -201,7 +199,7 @@ while k <= nOfFrames
         end
 end
 fprintf('\n');
-disp(['src.AcquisitionFrameRate = ' num2str(src.AcquisitionFrameRate)] );
+%disp(['src.AcquisitionFrameRate = ' num2str(src.AcquisitionFrameRate)] );
 
 stop(vid);
 if createVid; delete(vid); end
@@ -233,7 +231,7 @@ if exist('folder','var') && ~isempty(folder)
     end    
 
     % -- Save
-    disp(['Saving ' filename ' ...'])
+    disp(['Saving "' filename '" ...'])
     switch saveFormat
 %         case '.mat'
 %             save(filename,'rec');
@@ -243,7 +241,7 @@ if exist('folder','var') && ~isempty(folder)
             save([filename '\info.mat'],'-struct','info');
         case '.avi'
             WriteAvi(filename,rec,videoFormat,info.cam.AcquisitionFrameRate);
-            save([filename(1:end-4) '_info.mat'],'-struct','info');
+            save([filename '_info.mat'],'-struct','info');
         otherwise
             error('wrong saveFormat, must be .tiff or .mat. or .avi')
     end
@@ -257,7 +255,7 @@ end
 
 end 
 
-function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite)
+function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src)
     mustFieldsForFilename = {'Gain','ExposureTime'};
     for field = mustFieldsForFilename(:)'
         if ~isfield(camParams,field{1})
@@ -266,12 +264,7 @@ function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,pre
     end
     camParamsStr   = Struct2String(camParams,CamParamsLUT());
     setupParamsStr = Struct2String(setupParams,SetupParamsLUT);
-    
-
-    if ~isempty(suffix)
-        suffix = ['_' suffix];
-    end
-    
+        
     recNameBase = sprintf('%s%s%s%s',prefix,setupParamsStr,camParamsStr,suffix);
     if isempty(recNameBase)
         error('Record name cannot be empty! Please specify prefix/suffix or enable parameters in the name');
@@ -285,27 +278,33 @@ function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,pre
             delete([folder '\' recNameBase '.avi']);
         elseif exist([folder '\' recNameBase ],'file')                
             delete([folder '\' recNameBase ]);
-        else
-            error(['unknown saveFformat "' saveFormat '"'])
         end
         recName = recNameBase;
     else
         pattern = [regexptranslate('escape', recNameBase), '_(\d+)(.avi)?$'];
 
         samefiles = dir([folder '\' recNameBase '_*']);
-        samefiles = samefiles([samefiles.isdir] || cellfun(@(x) endsWith(x,',avi'), {samefiles.name} ,'UniformOutput',true));
-        samefiles = { samefiles(cellfun(@(x) ~isempty(regexp(x, pattern,'once')), {samefiles.name} ,'UniformOutput',true)).name } ;
-        filesIndices = cellfun(@(x) str2double(regexp(x, pattern,'tokens')), samefiles ,'UniformOutput',true);
-        if isempty(filesIndices)
-            newIndex = 0;
+        if ~isempty(samefiles)
+            samefiles = samefiles([samefiles.isdir] | cellfun(@(x) endsWith(x,',avi'), {samefiles.name} ,'UniformOutput',true)); % filter only folders and .avi files
+            samefiles = { samefiles(cellfun(@(x) ~isempty(regexp(x, pattern,'once')), {samefiles.name} ,'UniformOutput',true)).name } ; % find files with the same name but different index
+            filesIndices = [];
+            for filename=samefiles(:)'
+                match = regexp(filename{1}, pattern,'tokens');
+                filesIndices = [ filesIndices, str2double(match{1}{1}) ]; %#ok<AGROW>
+            end
+            if isempty(filesIndices)
+                newIndex = 0;
+            else
+                newIndex = max(filesIndices)+1;
+            end
+            if newIndex > 999
+                error(['Too many records with the same name "' folder '\' recNameBase '"' ] );
+            end
         else
-            newIndex = max(filesIndices)+1;
-        end
-        if newIndex > 999
-            error(['Too many records with the same name "' folder '\' recNameBase '"' ] );
+            newIndex = 0;
         end
         newIndexStr = sprintf('%0*d',3,newIndex);
-        recName = [recNameBase '_' newIndexStr]; 
+        recName = [recNameBase '_' newIndexStr];
     end
     if ismember(saveFormat,{'avi'})
         recName = [recName '.avi']; 

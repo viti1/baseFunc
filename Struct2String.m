@@ -29,7 +29,7 @@ function totStr = Struct2String(paramS,lut)
         for pname_cell = fieldnames(paramS)'
             param_name = pname_cell{1};
             
-            if addToFilenameStruct && isfield(addToFilenameStruct,param_name) && ~addToFilenameStruct.param_name
+            if ~isempty(addToFilenameStruct) && isfield(addToFilenameStruct,param_name) && ~addToFilenameStruct.(param_name)
                 continue; % skip this parameter
             end
                             

@@ -1,8 +1,8 @@
-%-------------------------------------------------------
-% [rec, info] = ReadRecord(file_or_folder,nOfFrames, startFrame)
+%%-------------------------------------------------------
+% [rec, info] = ReadRecord(recName, nOfFrames , startFrame)
 
 % Input : 
-%   file_or_folder - full path of folder with .tiff/.tif files or single .avi file, 
+%   recName - full path of folder with .tiff/.tif files or single .avi file, 
 %                    or full path of .avi/.tif/.tiff file.
 %                    Assuming gray scale image.
 %   
@@ -16,7 +16,7 @@
 %          cam      - struct of the camera input parameters  
 %          setup    - setup parameters as passed by the user to RecordFromCamera 
 %
-%-------------------------------------------------------
+%%-------------------------------------------------------
 function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
     
     %% Check input parameters

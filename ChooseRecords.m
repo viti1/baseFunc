@@ -17,6 +17,8 @@ function [records, paramArr] = ChooseRecords(recordsFolder, filter, sortBy, isFi
     end
     renames = {renames.name}';
     renames(ismember(renames,{'.','..'})) = [];
+    renames( cellfun(@(x) endsWith(x,'_info.mat'),renames) ) = []; % remove _info.mat files from the records list
+    
     records = fullfile(recordsFolder,renames);
     
     if exist('sortBy','var') && ~isempty(sortBy) 
