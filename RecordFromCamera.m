@@ -1,4 +1,4 @@
-%% [ rec, filename , info ] = RecordFromCamera ( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, forceWrite, plotFlag, vid )
+%% [ rec, filename , info ] = RecordFromCamera ( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid )
 % Input : 
 %   nOfFrames - desired number of frames. default = 1
 
@@ -19,7 +19,7 @@
 %   prefix - prefix for the filname
 %   suffix - suffix for the filname 
 %   videoFormat - "Mono8" or "Mono12" ( for additional formats - need to update the code )
-%   forceWrite  - save recording even if recording with the same name already exist
+%   overwriteFlag  - save recording even if recording with the same name already exists
 %   plotFlag  - plot last frame of the record. default = true
 %               can also be a handle to a figure ( in which you want to plot the image)
 %   vid       - preopened video object. Not very recommended for use.
@@ -36,7 +36,7 @@
 %   filename - output full file name (including path)
 % ``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
-function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, forceWrite, plotFlag, vid )
+function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid )
 
 %% Check functin input parameters and set defualt values for missing parameters
 
@@ -70,8 +70,8 @@ if ~exist('saveFormat','var') || isempty(saveFormat)
     saveFormat = '.tiff';
 end
 
-if ~exist('forceWrite','var') || isempty(forceWrite)
-    forceWrite = false;
+if ~exist('forceWrite','var') || isempty(overwriteFlag)
+    overwriteFlag = false;
 end
 
 if ~exist('plotFlag','var') || isempty(plotFlag)
@@ -119,7 +119,6 @@ if createVid
     vid = videoinput("gentl", 1, videoFormat);
 end
 
-src = getselectedsource(vid);
 vid.FramesPerTrigger = Inf; 
 
 camInputFields = fieldnames(camParams); 
@@ -129,7 +128,6 @@ if ~all(ismember(camInputFields,camOriginalFields))
     disp('camera src struct fields : ')
     disp(camOriginalFields)
     badFields = strjoin(camInputFields(~ismember(camInputFields,camOriginalFields)));
-    stop(vid)
     delete(vid)
     error(['camParams should have only legit fields for camera src struct. The following field are not exceptable :' badFields ])
 end
@@ -147,9 +145,12 @@ if ~isempty(camInputFields)
     end
 end
 
-%% Create filename from Parameters Structs 
-[filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src);
-
+%% Create filename from Parameters Structs
+if exist('folder','var') && ~isempty(folder)
+    [filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
+else
+    [~, recName] = GenerateFileName('',camParams,setupParams,prefix,suffix,'.tiff',1,src);
+end
 
 %% Create info struct
 if isfield(camParams,'addToFilename'); camParams = rmfield(camParams,'addToFilename'); end
@@ -165,7 +166,9 @@ end
 info.setup = setupParams;
 
 %% Get images Sequence from Camera
-fprintf('Recording "%s" ... \n',recName);
+if exist('folder','var') && ~isempty(folder)
+    fprintf('Recording "%s" ... \n',recName);
+end
 start(vid);
 
 %allocate 
@@ -212,6 +215,7 @@ end
 
 %% Plot
 if plotFlag
+    
     set(figHandle,'name',recName);
     figure(figHandle);
     imagesc(rec(:,:,end)); colormap gray;
