@@ -120,6 +120,7 @@ if createVid
 end
 
 vid.FramesPerTrigger = Inf; 
+src = getselectedsource(vid);
 
 camInputFields = fieldnames(camParams); 
 camInputFields(ismember(camInputFields,{'addToFilename','videoFormat'})) = [];
@@ -133,10 +134,18 @@ if ~all(ismember(camInputFields,camOriginalFields))
 end
 
 % set camera parameters
+if ( isfield(camParams,'TriggerMode') &&  strcmpi(camParams.TriggerMode,'On') ) || strcmpi(src.TriggerMode,'On')
+    triggerconfig(vid, 'hardware');
+end
+
 if ~isempty(camInputFields)
     for field = camInputFields(:)'
         if strcmp(field{1},'addToFilename'); continue; end
-        fprintf('Setting %s = %g\n',field{1},camParams.(field{1}));
+        if ischar(camParams.(field{1}))
+             fprintf('Setting %s = %s\n',field{1},camParams.(field{1}));
+        else
+            fprintf('Setting %s = %g\n',field{1},camParams.(field{1}));
+        end
         src.(field{1}) = camParams.(field{1});  
     end    
 
@@ -243,9 +252,11 @@ if exist('folder','var') && ~isempty(folder)
         case '.tiff'
             WriteTiffSeq(filename,rec,videoFormat);
             save([filename '\info.mat'],'-struct','info');
+%             prettyjson(info,[filename '\info.json']);
         case '.avi'
             WriteAvi(filename,rec,videoFormat,info.cam.AcquisitionFrameRate);
             save([filename '_info.mat'],'-struct','info');
+%             prettyjson(info,[ filename '_info.json']);
         otherwise
             error('wrong saveFormat, must be .tiff or .mat. or .avi')
     end
