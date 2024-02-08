@@ -1,4 +1,4 @@
-function [ P1 , P2 ] = abs_fft(S,Fs)
+function [ P1 , f] = abs_fft(S,Fs)
 
 T = 1/Fs;             % Sampling period       
 L = length(S);             % Length of signal
@@ -24,8 +24,9 @@ P1(2:end-1) = 2*P1(2:end-1);
 f = Fs*(0:(L/2))/L;
 subplot(2,1,2)
 
-plot(f,P1(1:end)) 
+start_ind = 4;
+plot(f(start_ind:end),P1(start_ind:end)) 
 title('Single-Sided Amplitude Spectrum of S(t)')
-xlabel('f (Hz)')
-ylabel('|P1(f)|')
+xlabel('f(Hz)')
+ylabel('|FFT(f)|')
 
