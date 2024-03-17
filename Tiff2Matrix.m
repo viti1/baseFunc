@@ -8,7 +8,7 @@ function  rec = Tiff2Matrix(filename, nOfFrames, startFrame)
     end
     
     if exist(filename,'file') == 7  % its a folder
-        tiff_files = [ dir([filename filesep '\*.tiff']) , dir([filename filesep '\*.tif']) ];
+        tiff_files = dir([filename filesep '\*.tiff']) ;
         if ~isinf(nOfFrames)
             if numel(tiff_files) - startFrame + 1 < nOfFrames
                 error('File "%s" -> There is no enough frames (requested: %d , in file starting from frame %d: %d) ',nOfFrames,startFrame,numel(tiff_files) - startFrame + 1, filename);

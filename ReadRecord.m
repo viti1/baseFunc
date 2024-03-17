@@ -36,7 +36,7 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
     if exist(recName,'file') == 7 % it's a folder
         folderpath = recName;
         % find all .tiff or .tif files
-        tiff_files = [ dir([folderpath, '\*.tiff']) , dir([folderpath, '\*.tif']) ];
+        tiff_files = dir([folderpath, '\*.tiff']) ;
         avi_files  = dir([folderpath, '\*.avi']) ;
         if isempty(tiff_files) && isempty(avi_files)
             error(['There are no ''.tiff'' or ''.avi'' files in input folder ''' folderpath '''']);

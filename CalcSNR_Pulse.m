@@ -1,16 +1,26 @@
-function [SNR, Pulse] = CalcSNR_Pulse(S,Fs)
-    noiseTh = 5; % Hz
-    [ FFT , f] = abs_fft(S,Fs);
+function [SNR,  spectrum , freq, pulseFreq, pulseBPM] = CalcSNR_Pulse(S,Fs)
+% S - sinal in time. Fs - Frame rate (Hz)
+  [ spectrum , freq] = abs_fft(S,Fs);
 
-    Noise = mean(FFT(f > noiseTh));
+   maxDCfreq = 0.7;
+   maxExpectedPulseFreq = 5;
+   
+   % ignore DC
+   spectrum(freq < maxDCfreq ) = [];
+   freq(freq < maxDCfreq ) = [];
+   
+   [ Signal , maxIdx ] = max(spectrum);
+   if maxIdx == 1 
+       error('Maximum FFT value found in unexpected frequency %g Hz', freq(maxIdx))
+   end
+       
+   if freq(maxIdx) >  maxExpectedPulseFreq  
+       error('Maximum FFT value found in unexpected frequency %g Hz', freq(maxIdx))
+   end
+   
+   pulseFreq = freq(maxIdx);
+   pulseBPM   = round(1/pulseFreq*60,1);
+   
+   Noise = mean( spectrum( freq > maxExpectedPulseFreq ) );
+   SNR = Signal/Noise;
 
-    pulthMinTh = 0.3;
-    cutSpectrum = FFT(f > pulthMinTh);
-    cut_f = f(f > pulthMinTh);
-    [ Signal, max_idx ] = max(cutSpectrum);
-    Pulse = cut_f(max_idx);
-
-    SNR = Signal/Noise;
-
-
-    

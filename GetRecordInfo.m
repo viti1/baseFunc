@@ -13,3 +13,5 @@ function info = GetRecordInfo(recordName)
     end
     info.name = GetParamsFromFileName(recordName);
     
+    
+    
