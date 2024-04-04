@@ -36,7 +36,7 @@
 %   filename - output full file name (including path)
 % ``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
-function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid )
+function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid , beepInterval)
 
 %% Check functin input parameters and set defualt values for missing parameters
 
@@ -192,11 +192,20 @@ end
 
 % Start aquisition
 k=1;
+h_waitbar = waitbar(0,'Recording ...');
+
+%Sound Setting
+fs = 44100; % Sampling frequency (Hz)
+t = 0:1/fs:1; % Time vector (1 second)
+freq = [700,400]; % Frequency of the sine wave (Hz)
+amplitude = 0.4; % Amplitude of the sine wave
+freq_i = 3;
+beepFlag = exist('beepInterval','var');
 while k <= nOfFrames 
         %currImage = getsnapshot(v);
         if vid.FramesAvailable
-            fprintf('%d\t',k);
-            if mod(k,50) == 0; fprintf('\n'); end
+            if mod(k,10)==0; fprintf('%d\t',k); end
+            if mod(k,100) == 0; fprintf('\n'); end
                 
             currImagesBuff = getdata(vid, vid.FramesAvailable);
             buffSize = size(currImagesBuff,4);
@@ -206,7 +215,16 @@ while k <= nOfFrames
                 currImage = uint16(squeeze(currImagesBuff));
             end
             rec(:,:,k:k+buffSize-1) = currImage;
-    
+            
+            if mod(k,10)==0 
+                waitbar(k/nOfFrames,h_waitbar,['Recording frame ' num2str(k)]);
+            end
+            
+            if beepFlag && mod(k,beepInterval)==0               
+                sound(amplitude * sin(2*pi*freq(freq_i)*t), fs);
+                freq_i = freq_i + 1;
+                if freq_i >  length(freq); freq_i=1; end
+            end
             k = k + buffSize;
         end
 end
@@ -221,7 +239,7 @@ if size(rec,3) > nOfFrames
     rec(:,:,nOfFrames+1:end) = [];
 end
 
-
+waitbar(k/nOfFrames,h_waitbar,'Saving...');
 %% Plot
 if plotFlag
     
@@ -267,7 +285,7 @@ if exist('folder','var') && ~isempty(folder)
     
     rec = double(rec);
 end
-
+close(h_waitbar);
 end 
 
 function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src)

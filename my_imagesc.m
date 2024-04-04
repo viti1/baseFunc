@@ -1,6 +1,6 @@
 function fig = my_imagesc(im)
 im = double(im);
-fig = figure; 
+fig = figure('Units','Normalized','Position',[0.05,0.05,0.6,0.8]); 
 imagesc(im); 
 [N,edges] = histcounts(im(:),1000,'Normalization','cdf');
 upperLim = ceil(edges(find(N > 0.99,1))); 

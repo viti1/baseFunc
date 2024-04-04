@@ -46,29 +46,42 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
             if numel(avi_files) > 1
                 error([ '"' folderpath '" must contain only one .avi file but contains ' num2str(numel(avi_files)) ' files.']);
             end
-            rec  = Avi2Matrix( fullfile(folderpath,avi_files.name) ,nOfFrames , startFrame);            
-        elseif ~isempty(tiff_files)
-            rec = Tiff2Matrix(folderpath,nOfFrames,startFrame);
+            [ rec , vH ]  = Avi2Matrix( fullfile(folderpath,avi_files.name) ,nOfFrames , startFrame);
+            nBits = vH.BitsPerPixel;
             
+        elseif ~isempty(tiff_files)
+            [ rec , nBits ] = Tiff2Matrix(folderpath,nOfFrames,startFrame);
+                     
         end
     else % it's a file    
         [~, ~ , ext] = fileparts(recName);
         if strcmp(ext,'.avi')
-            rec = Avi2Matrix( recName ,nOfFrames , startFrame);
+            [ rec , vH ] = Avi2Matrix( recName ,nOfFrames , startFrame);
+            nBits = vH.BitsPerPixel;
         elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
             t = Tiff(recName,'r');
+            nBits = getTag(t,'BitsPerSample');
             rec = read(t);
             close(t);
-            rec = rec(:,:,startFrame:startFrame+nOfFrames-1);
+            rec = rec(:,:,startFrame:startFrame+nOfFrames-1);                 
         else
             error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
         end
     end
 
     rec = double(rec);
+    if nBits == 16
+        rec = rec/16; % because Basler camera for some reason uses last 12 bits instead of first
+    end
     %% Read Info
     if nargout > 1
         info = GetRecordInfo(recName); 
+        if exist('nBits','var')
+            info.nBits = nBits;
+            if info.nBits == 16
+                info.nBits = 12; % basler camera has Mono12 or Mono8
+            end
+        end
     end
 end
 
