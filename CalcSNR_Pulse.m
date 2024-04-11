@@ -5,11 +5,11 @@ function [SNR,  spectrum , freq, pulseFreq, pulseBPM] = CalcSNR_Pulse(S,Fs,plotF
   end
   [ spectrum , freq] = abs_fft(S,Fs,plotFlag);
 
-   maxDCfreq = 0.7;
+   maxDCfreq = 0.65;
    if Fs > 11
        maxExpectedPulseFreq = 5;
-   elseif Fs > 8
-       maxExpectedPulseFreq = Fs/2-1;
+   elseif Fs > 3.2
+       maxExpectedPulseFreq = Fs/2*0.8;
    else 
       maxExpectedPulseFreq = Inf; % Can't calculate noise
    end
