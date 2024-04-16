@@ -1,4 +1,6 @@
 function fig = my_imagesc(im)
+% Create figure with stretched image between 0.99 and 0.01 percentiles and equal axis
+
 im = double(im);
 fig = figure('Units','Normalized','Position',[0.05,0.05,0.6,0.8]); 
 imagesc(im); 
@@ -12,3 +14,11 @@ SetAxisEqual();
 set(gca,'CLim',[ lowerLim upperLim]); 
 colorbar;
 colormap gray;
+
+function SetAxisEqual(ax)
+if nargin < 1
+    ax = gca();
+end
+axis equal; 
+dataObj = findall(ax,'Type','Image');
+set(ax,'XLim', dataObj.XData + 0.5*[-1 1], 'YLim', dataObj.YData + 0.5*[-1 1])

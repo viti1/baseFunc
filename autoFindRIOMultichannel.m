@@ -1,3 +1,4 @@
+<<<<<<< Updated upstream
 function [ masks, totMask, channels, fig , h_circles, h_txt] = autoFindRIOMultichannel(im,approxRadius,expectedNumOfChannels)
  
  if ~exist('approxRadius','var')
@@ -13,6 +14,9 @@ function [ masks, totMask, channels, fig , h_circles, h_txt] = autoFindRIOMultic
 % smearedIm = medfilt2(im,[13 13]);
 % smearedIm = filter2(ones(25),im);
 % my_imagesc(smearedIm)
+=======
+function [ masks, totMask, channels, fig , h_circles, h_txt] = autoFindRIOMultichannel(im,approxRadius)
+>>>>>>> Stashed changes
 
 if numel(radii) > expectedNumOfChannels*1.5
     % try less sensitive
@@ -28,7 +32,18 @@ end
 % [centers, radii, metric] = imfindcircles(im ,round(radii1(max_idx)*[0.95 1.05]),'ObjectPolarity','bright','Sensitivity',0.996); %,'EdgeThreshold',0.3);
 % [centers, radii, metric] = ReduceDuplicates(centers, radii, metric,approxRadius);
 
+<<<<<<< Updated upstream
  % my_imagesc(im); viscircles(centersBright, radiiBright,'Color','b','EnhanceVisibility',false,'LineWidth',1);
+=======
+%% find circles
+[centers1, radii1, metric1] = imfindcircles(im ,round(approxRadius*[0.85 1.05]),'ObjectPolarity','bright','Sensitivity',0.996); %,'EdgeThreshold',0.3);
+[centers1, radii1, metric1] = ReduceDuplicates(centers1, radii1, metric1,approxRadius);
+[~,max_idx] = max(metric1);
+[centers, radii, metric] = imfindcircles(im ,round(approxRadius*[0.95 1.05]),'ObjectPolarity','bright','Sensitivity',0.996); %,'EdgeThreshold',0.3);
+[centers, radii, metric] = ReduceDuplicates(centers, radii, metric,approxRadius);
+
+% my_imagesc(im); viscircles(centersBright, radiiBright,'Color','b','EnhanceVisibility',false,'LineWidth',1);
+>>>>>>> Stashed changes
 radiusMargins = 9;
 channels.Radii = radii-radiusMargins;
 channels.Centers = centers;
@@ -55,6 +70,7 @@ for k = 1:numel(channels.Radii)
     masks{k}((x-channels.Centers(k,1)).^2 + (y-channels.Centers(k,2)).^2 < channels.Radii(k)^2 ) = true;
     totMask = totMask |  masks{k};
 end
+<<<<<<< Updated upstream
  
 function [Centers,Radii,Metric] = ReduceDuplicates(orig_centers,orig_radii,orig_metric,approxRadius)
 N = numel(orig_radii);

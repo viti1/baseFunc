@@ -1,4 +1,7 @@
 function [ P1 , f] = abs_fft(S,Fs,plotFlag)
+if mod(length(S),2)==1
+    S(end) = [];
+end
 
 T = 1/Fs;             % Sampling period       
 if mod(length(S),2)~=0
@@ -27,7 +30,6 @@ P1(2:end-1) = 2*P1(2:end-1);
 
 % Define the frequency domain f and plot the single-sided amplitude spectrum P1. The amplitudes are not exactly at 0.7 and 1, as expected, because of the added noise. On average, longer signals produce better frequency approximations.
 f = Fs*(0:(L/2))/L;
-
 if plotFlag
     subplot(2,1,2)
     start_ind = 4;

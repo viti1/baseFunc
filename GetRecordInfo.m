@@ -28,20 +28,28 @@ function info = GetRecordInfo(recordName)
             if numel(avi_files) > 1
                 error([ '"' folderpath '" must contain only one .avi file but contains ' num2str(numel(avi_files)) ' files.']);
             end
+            info.fileType = '.avi';
             vH = VideoReader(fullfile(folderpath,avi_files(1).name) ); 
             info.nBits = vH.BitsPerPixel;           
         elseif ~isempty(tiff_files)
             tH = Tiff(fullfile(folderpath,tiff_files(1).name),'r');
-            info.nBits = getTag(tH,'BitsPerSample');         
+            info.fileType = '.tiff';
+            info.nBits = getTag(tH,'BitsPerSample'); 
+            name_words = strsplit(tiff_files(1).name,'__');
+            if numel(name_words) > 1 && ~isnan(str2double(name_words{2}))
+                info.cameraSN = name_words{2};
+            end    
         end
     else % it's a file    
         [~, ~ , ext] = fileparts(recordName);
         if strcmp(ext,'.avi')
-            [rec, vH] = Avi2Matrix( recordName ,nOfFrames , startFrame);
+            vH = VideoReader(recordName ); 
+            info.fileType = '.avi';
             info.nBits = vH.BitsPerPixel;
         elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
             tH = Tiff(recordName,'r');
-            info.nBits = tH.BitsPerSample;
+            info.fileType = '.tiff';
+            info.nBits = tH.BitsPerSample;            
             close(t);                   
         else
             error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])

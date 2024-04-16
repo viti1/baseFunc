@@ -50,8 +50,7 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
             nBits = vH.BitsPerPixel;
             
         elseif ~isempty(tiff_files)
-            [ rec , nBits ] = Tiff2Matrix(folderpath,nOfFrames,startFrame);
-                     
+            [ rec , nBits ] = Tiff2Matrix(folderpath,nOfFrames,startFrame);              
         end
     else % it's a file    
         [~, ~ , ext] = fileparts(recName);
@@ -71,7 +70,9 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
 
     rec = double(rec);
     if nBits == 16
-        rec = rec/16; % because Basler camera for some reason uses last 12 bits instead of first
+        if all(mod(rec(1:400),16) == 0)
+            rec = rec/16; % because Basler camera for some reason uses last 12 bits instead of first
+        end
     end
     %% Read Info
     if nargout > 1
