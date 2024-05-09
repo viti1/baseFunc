@@ -1,11 +1,11 @@
-function [SNR,  spectrum , freq, pulseFreq, pulseBPM] = CalcSNR_Pulse(S,Fs,plotFlag)
-% S - sinal in time. Fs - Frame rate (Hz)
+function [SNR,  spectrum , freq, pulseFreq, pulseBPM] = CalcSNR_Pulse(Sig,Fs,plotFlag)
+% Sig - sinal in time. Fs - Frame rate (Hz)
 
   if nargin < 3
       plotFlag = false;
   end
 
-  [ spectrum , freq] = abs_fft(S,Fs,plotFlag);
+  [ spectrum , freq] = abs_fft(Sig,Fs,plotFlag);
 
    maxDCfreq = 0.65;
    if Fs > 11
