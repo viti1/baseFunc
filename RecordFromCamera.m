@@ -1,4 +1,4 @@
-%% [ rec, filename , info ] = RecordFromCamera ( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, forceWrite, plotFlag, vid )
+%% [ rec, filename , info ] = RecordFromCamera ( nOfFrames,idx , camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid )
 % Input : 
 %   nOfFrames - desired number of frames. default = 1
 
@@ -19,7 +19,7 @@
 %   prefix - prefix for the filname
 %   suffix - suffix for the filname 
 %   videoFormat - "Mono8" or "Mono12" ( for additional formats - need to update the code )
-%   forceWrite  - save recording even if recording with the same name already exist
+%   overwriteFlag  - save recording even if recording with the same name already exists
 %   plotFlag  - plot last frame of the record. default = true
 %               can also be a handle to a figure ( in which you want to plot the image)
 %   vid       - preopened video object. Not very recommended for use.
@@ -36,7 +36,7 @@
 %   filename - output full file name (including path)
 % ``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
-function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, forceWrite, plotFlag, vid )
+function [ rec, filename, info ] = RecordFromCamera( nOfFrames,idx, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid , beepInterval)
 
 %% Check functin input parameters and set defualt values for missing parameters
 
@@ -70,8 +70,8 @@ if ~exist('saveFormat','var') || isempty(saveFormat)
     saveFormat = '.tiff';
 end
 
-if ~exist('forceWrite','var') || isempty(forceWrite)
-    forceWrite = false;
+if ~exist('forceWrite','var') || isempty(overwriteFlag)
+    overwriteFlag = false;
 end
 
 if ~exist('plotFlag','var') || isempty(plotFlag)
@@ -116,11 +116,11 @@ else
 end
 
 if createVid
-    vid = videoinput("gentl", 1, videoFormat);
+    vid = videoinput("gentl", idx, videoFormat);
 end
 
-src = getselectedsource(vid);
 vid.FramesPerTrigger = Inf; 
+src = getselectedsource(vid);
 
 camInputFields = fieldnames(camParams); 
 camInputFields(ismember(camInputFields,{'addToFilename','videoFormat'})) = [];
@@ -129,16 +129,23 @@ if ~all(ismember(camInputFields,camOriginalFields))
     disp('camera src struct fields : ')
     disp(camOriginalFields)
     badFields = strjoin(camInputFields(~ismember(camInputFields,camOriginalFields)));
-    stop(vid)
     delete(vid)
     error(['camParams should have only legit fields for camera src struct. The following field are not exceptable :' badFields ])
 end
 
 % set camera parameters
+if ( isfield(camParams,'TriggerMode') &&  strcmpi(camParams.TriggerMode,'On') ) || strcmpi(src.TriggerMode,'On')
+    triggerconfig(vid, 'hardware');
+end
+
 if ~isempty(camInputFields)
     for field = camInputFields(:)'
         if strcmp(field{1},'addToFilename'); continue; end
-        fprintf('Setting %s = %g\n',field{1},camParams.(field{1}));
+        if ischar(camParams.(field{1}))
+             fprintf('Setting %s = %s\n',field{1},camParams.(field{1}));
+        else
+            fprintf('Setting %s = %g\n',field{1},camParams.(field{1}));
+        end
         src.(field{1}) = camParams.(field{1});  
     end    
 
@@ -147,9 +154,12 @@ if ~isempty(camInputFields)
     end
 end
 
-%% Create filename from Parameters Structs 
-[filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src);
-
+%% Create filename from Parameters Structs
+if exist('folder','var') && ~isempty(folder)
+    [filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
+else
+    [~, recName] = GenerateFileName('',camParams,setupParams,prefix,suffix,'.tiff',1,src);
+end
 
 %% Create info struct
 if isfield(camParams,'addToFilename'); camParams = rmfield(camParams,'addToFilename'); end
@@ -165,7 +175,9 @@ end
 info.setup = setupParams;
 
 %% Get images Sequence from Camera
-fprintf('Recording "%s" ... \n',recName);
+if exist('folder','var') && ~isempty(folder)
+    fprintf('Recording "%s" ... \n',recName);
+end
 start(vid);
 
 %allocate 
@@ -180,11 +192,20 @@ end
 
 % Start aquisition
 k=1;
+h_waitbar = waitbar(0,'Recording ...');
+
+%Sound Setting
+fs = 44100; % Sampling frequency (Hz)
+t = 0:1/fs:1; % Time vector (1 second)
+freq = [700,400]; % Frequency of the sine wave (Hz)
+amplitude = 0.4; % Amplitude of the sine wave
+freq_i = 3;
+beepFlag = exist('beepInterval','var');
 while k <= nOfFrames 
         %currImage = getsnapshot(v);
         if vid.FramesAvailable
-            fprintf('%d\t',k);
-            if mod(k,50) == 0; fprintf('\n'); end
+            if mod(k,10)==0; fprintf('%d\t',k); end
+            if mod(k,100) == 0; fprintf('\n'); end
                 
             currImagesBuff = getdata(vid, vid.FramesAvailable);
             buffSize = size(currImagesBuff,4);
@@ -194,7 +215,16 @@ while k <= nOfFrames
                 currImage = uint16(squeeze(currImagesBuff));
             end
             rec(:,:,k:k+buffSize-1) = currImage;
-    
+            
+            if mod(k,10)==0 
+                waitbar(k/nOfFrames,h_waitbar,['Recording frame ' num2str(k)]);
+            end
+            
+            if beepFlag && mod(k,beepInterval)==0               
+                sound(amplitude * sin(2*pi*freq(freq_i)*t), fs);
+                freq_i = freq_i + 1;
+                if freq_i >  length(freq); freq_i=1; end
+            end
             k = k + buffSize;
         end
 end
@@ -209,9 +239,10 @@ if size(rec,3) > nOfFrames
     rec(:,:,nOfFrames+1:end) = [];
 end
 
-
+waitbar(k/nOfFrames,h_waitbar,'Saving...');
 %% Plot
 if plotFlag
+    
     set(figHandle,'name',recName);
     figure(figHandle);
     imagesc(rec(:,:,end)); colormap gray;
@@ -239,9 +270,11 @@ if exist('folder','var') && ~isempty(folder)
         case '.tiff'
             WriteTiffSeq(filename,rec,videoFormat);
             save([filename '\info.mat'],'-struct','info');
+%             prettyjson(info,[filename '\info.json']);
         case '.avi'
             WriteAvi(filename,rec,videoFormat,info.cam.AcquisitionFrameRate);
             save([filename '_info.mat'],'-struct','info');
+%             prettyjson(info,[ filename '_info.json']);
         otherwise
             error('wrong saveFormat, must be .tiff or .mat. or .avi')
     end
@@ -252,7 +285,7 @@ if exist('folder','var') && ~isempty(folder)
     
     rec = double(rec);
 end
-
+close(h_waitbar);
 end 
 
 function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src)
