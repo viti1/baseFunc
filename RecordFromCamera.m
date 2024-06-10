@@ -91,8 +91,18 @@ else
 end
 
 % check existance of parent folder
-if exist('folder','var') && ~isempty(folder) && exist(fileparts(folder),'dir') ~= 7
+if exist('folder','var') && ~isempty(folder) 
+    if isequal(folder,0) 
+        error('Input folder must not be zero!');
+    elseif ~ischar(folder) && ~isstring(folder)
+        error('Input folder must be a char array or a string');
+    elseif  exist(fileparts(folder),'dir') ~= 7
         error('The parent folder of the destination folder must exist');
+    end
+end
+
+if ~exist('folder','var') || isempty(folder)
+    filename = '';
 end
 
 createVid= ~exist('vid','var') || isempty(vid);
@@ -213,7 +223,7 @@ while k <= nOfFrames
                 currImage = uint8(squeeze(currImagesBuff));
             elseif strcmp(videoFormat,'Mono12')
                 currImage = uint16(squeeze(currImagesBuff));
-            end
+            end            
             rec(:,:,k:k+buffSize-1) = currImage;
             
             if mod(k,10)==0 

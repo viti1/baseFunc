@@ -96,16 +96,15 @@ tagstruct.ImageLength = size(imageBuff,1);
 tagstruct.ImageWidth  = size(imageBuff,2);            
 if strcmp(videoFormat,"Mono8")
     tagstruct.BitsPerSample = 8;
-    tagstruct.SamplesPerPixel = 1;
 elseif strcmp(videoFormat,"Mono12")
     tagstruct.BitsPerSample = 12;
-    tagstruct.SamplesPerPixel = 1;
 else 
     error('Unsupported format for writing .tiffs')
 end
+tagstruct.SamplesPerPixel = 1;
 tagstruct.Software = 'MATLAB';
 tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
-%tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
 
 % save parameters
 save(fullfile(destFolder,'src.mat'),'src');
@@ -129,7 +128,7 @@ while k <= nOfFrames
         end
         
         % --- save image to .tiff
-        t = Tiff([destFolder,sprintf('\Frame%0*d.tiff',3,k)],'w');
+        t = Tiff([destFolder,sprintf('\\Frame%0*d.tiff',3,k)],'w');
         setTag(t,tagstruct);
         write(t,currImage);
         close(t);
