@@ -30,7 +30,8 @@ function info = GetRecordInfo(recordName)
             end
             info.fileType = '.avi';
             vH = VideoReader(fullfile(folderpath,avi_files(1).name) ); 
-            info.nBits = vH.BitsPerPixel;           
+            info.nBits = vH.BitsPerPixel; 
+            info.imageSize = [vH.Hight vH.Width];
         elseif ~isempty(tiff_files)
             tH = Tiff(fullfile(folderpath,tiff_files(1).name),'r');
             info.fileType = '.tiff';
@@ -38,7 +39,9 @@ function info = GetRecordInfo(recordName)
             name_words = strsplit(tiff_files(1).name,'__');
             if numel(name_words) > 1 && ~isnan(str2double(name_words{2}))
                 info.cameraSN = name_words{2};
-            end    
+            end 
+            info.imageSize = [getTag(tH,'ImageLength') getTag(tH,'ImageWidth')];
+            close(tH)
         end
     else % it's a file    
         [~, ~ , ext] = fileparts(recordName);
@@ -46,11 +49,13 @@ function info = GetRecordInfo(recordName)
             vH = VideoReader(recordName ); 
             info.fileType = '.avi';
             info.nBits = vH.BitsPerPixel;
+            info.imageSize = [vH.Hight vH.Width];
         elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
             tH = Tiff(recordName,'r');
             info.fileType = '.tiff';
             info.nBits = tH.BitsPerSample;            
-            close(t);                   
+            info.imageSize = [tH.ImageLength tH.ImageWidth];
+            close(tH);  
         else
             error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
         end
