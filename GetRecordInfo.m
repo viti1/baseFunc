@@ -56,6 +56,21 @@ function info = GetRecordInfo(recordName)
             info.nBits = tH.BitsPerSample;            
             info.imageSize = [tH.ImageLength tH.ImageWidth];
             close(tH);  
+        elseif strcmp(ext,'.mat')
+            D = load(recordName);
+            fields = fieldnames(D)  ;            
+            if ~startsWith(fields{1},'Video')
+                error('.mat file should contain video field');
+            end
+            info.fileType = '.mat';
+            if isa(D.(fields{1}),'uint8') 
+                info.nBits = 8; 
+%             elseif isa(D.fields{2},'uint16') 
+%                 info.nBits = 16;
+            else
+                error('Recording is unknown number of bits')
+            end
+            info.imageSize = size(D.(fields{1}),1:2);
         else
             error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
         end

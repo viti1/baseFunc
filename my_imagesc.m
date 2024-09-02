@@ -1,4 +1,5 @@
 function [fig , hImage ]= my_imagesc(im,mask,ax)
+% [fig , hImage ]= my_imagesc(im,mask,ax)
 % Create figure with stretched image between 0.99 and 0.01 percentiles and equal axis
 
 im = double(im);
