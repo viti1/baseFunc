@@ -5,7 +5,12 @@ function [SNR,  spectrum , freq, pulseFreq, pulseBPM] = CalcSNR_Pulse(Sig,Fs,plo
       plotFlag = false;
   end
 
-  [ spectrum , freq] = abs_fft(Sig,Fs,plotFlag);
+  if plotFlag
+      plotFrequencyStart = 0.2;
+  else
+      plotFrequencyStart = [];
+  end
+  [ spectrum , freq] = abs_fft(Sig,Fs,plotFrequencyStart);
 
    maxDCfreq = 0.65;
    if Fs > 11
