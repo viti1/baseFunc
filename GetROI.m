@@ -12,4 +12,4 @@ mask = false(size(im,1),size(im,2));
 mask((x-circ_h.Center(1)).^2 + (y-circ_h.Center(2)).^2 < circ_h.Radius^2 ) = true;
 circ.Center = circ_h.Center;
 circ.Radius = circ_h.Radius;
-close(figIm)
+% close(figIm)
