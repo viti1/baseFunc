@@ -1,4 +1,4 @@
-function  rec = Tiff2Matrix(filename, nOfFrames, startFrame)
+function  [rec , nBits] = Tiff2Matrix(filename, nOfFrames, startFrame)
     if ~exist('startFrame','var') || isempty(startFrame)
         startFrame = 1;
     end
@@ -7,11 +7,13 @@ function  rec = Tiff2Matrix(filename, nOfFrames, startFrame)
         nOfFrames = Inf;
     end
     
+    nBits = nan;
+    
     if exist(filename,'file') == 7  % its a folder
-        tiff_files = [ dir([filename filesep '\*.tiff']) , dir([filename filesep '\*.tif']) ];
+        tiff_files = dir([filename filesep '\*.tiff']) ;
         if ~isinf(nOfFrames)
             if numel(tiff_files) - startFrame + 1 < nOfFrames
-                error('No enough frames in requested file/folder');
+                error('File "%s" -> There is no enough frames (requested: %d , in file starting from frame %d: %d) ',filename,nOfFrames,startFrame,numel(tiff_files) - startFrame + 1);
             end
         else
             nOfFrames = numel(tiff_files) - startFrame + 1;
@@ -20,6 +22,7 @@ function  rec = Tiff2Matrix(filename, nOfFrames, startFrame)
         % get first image in order to find out the image size
         t = Tiff(fullfile(filename,tiff_files(1).name),'r');
         rec = nan(getTag(t,'ImageLength'),getTag(t,'ImageWidth'),nOfFrames);
+        nBits = getTag(t,'BitsPerSample');
         close(t);
 
         % read all images
@@ -37,12 +40,15 @@ function  rec = Tiff2Matrix(filename, nOfFrames, startFrame)
 % %         setDirectory(t,k);
 % %         setSubDirectory(t,offsets(k));
         rec = read(t);
+        nBits = getTag(t,'BitsPerSample');
         close(t);
-%         
+  
         if ~isinf(nOfFrames)
             rec = rec(:,:,startFrame:(nOfFrames+startFrame-1));
         elseif startFrame > 1
             rec = rec(:,:,startFrame:end);
         end
     end
+    
+    
 end

@@ -17,7 +17,8 @@ function [records, paramArr] = ChooseRecords(recordsFolder, filter, sortBy, isFi
     end
     renames = {renames.name}';
     renames(ismember(renames,{'.','..'})) = [];
-    renames( cellfun(@(x) endsWith(x,'_info.mat'),renames) ) = []; % remove _info.mat files from the records list
+    renames( cellfun(@(x) endsWith(x,'.mat'),renames) ) = []; % remove _info.mat files from the records list
+    renames( cellfun(@(x) endsWith(x,'.json'),renames) ) = [];
     
     records = fullfile(recordsFolder,renames);
     

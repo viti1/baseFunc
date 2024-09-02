@@ -35,12 +35,18 @@ function [nOfFrames, imSize] = GetNumOfFrames(recName)
             nOfFrames = getTag(t,'SamplesPerPixel'); % TBD Check!
             imSize =  [getTag(t,'ImageWidth') , getTag(t,'ImageLength') ];
             close(t)
+        elseif strcmp(ext,'.mat')
+            D = load(recName);
+            fields = fieldnames(D);
+            if ~startsWith(fields{1},'Video')
+                error('.mat file should contain video field');
+            end
+            nOfFrames = size(D.(fields{1}),3);
+            imSize = size(D.(fields{1}),1:2);
         else
             error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
         end
     else
         error(['''' recName  ''' record does not exist! '])
     end
-
-
 end

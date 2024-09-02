@@ -19,7 +19,8 @@ function  [rec, v] = Avi2Matrix(filename, nOfFrames, startFrame)
     
     % optn Video object
     v = VideoReader(filename);
-    nOfFramesInRecord = round(v.Duration*v.FrameRate) - 1 ; % Not using the field 'NumFrames' because it is not consistent with different matlab versions
+    nOfFramesInRecord = round(v.Duration*v.FrameRate) ; % Not using the field 'NumFrames' because it is not consistent with different matlab versions
+    %nOfFramesInRecord = v.NumFrames;
     
     %if isprop(v,'VideoFormat'); disp(v.VideoFormat); end%DEBUG
 

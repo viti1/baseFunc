@@ -1,10 +1,11 @@
-% [localSpatialNoise, globalSpatialNoise, temporalNoise , localSpatialNoiseRel, globalSpatialNoiseRel, temporalNoiseRel, meanImPerFrame ] = ...
-%                 CalcNoise(rec,windowSize,mask,plotFlag)
+% [localSpatialNoise, globalSpatialNoise, temporalNoise ,meanRec, meanImPerFrame, localSpatialNoiseRel, globalSpatialNoiseRel, temporalNoiseRel ] = ...
+%                 CalcNoise(rec,windowSize,mask,plotFlag,nOfFrames)
 %  Input :
 %   rec - 3D matrix 
 %   windowSize - for local noise calculation
 %   mask - [optional] boolean, must be the same size as rec (in 2D). Defauld - largest fitting circle. 
 %   plotFlag - [optional] default = false
+%   nOfFrames - [optinal] default - all frames
 %  Output:
 %   localSpatialNoise  - local (in windowSize) spatial std averageed, after time averaging  ( in mask range )
 %   globalSpatialNoise - spatial std after time averaging  ( in mask range )
@@ -14,9 +15,19 @@
 %
 %
 
-function [localSpatialNoise, globalSpatialNoise, temporalNoise , localSpatialNoiseRel, globalSpatialNoiseRel, temporalNoiseRel, meanImPerFrame ] = ...
-                CalcNoise(rec,windowSize,mask,plotFlag)
-    % TBD : for temporal noise - substruct mean ? issue a warning        
+function [localSpatialNoise, globalSpatialNoise, temporalNoise ,meanRec, meanImPerFrame, localSpatialNoiseRel, globalSpatialNoiseRel, temporalNoiseRel ] = ...
+                CalcNoise(rec,windowSize,mask,plotFlag,nOfFrames)
+    % TBD : for temporal noise - substruct mean ? issue a warning  
+    tic
+    if ischar(rec) || isstring(rec)
+        recName = rec;
+        if exist('nOfFrames','var')
+            rec = ReadRecord( recName, nOfFrames );
+        else
+            rec = ReadRecord( recName );
+        end
+    end
+
     nOfFrames = size(rec,3);
     %nX = size(rec,2); nY = size(rec,1);
     
@@ -29,14 +40,18 @@ function [localSpatialNoise, globalSpatialNoise, temporalNoise , localSpatialNoi
     end
     
     rec = double(rec);
-    
+%     toc
+%     tic
+%     disp('LP im')
     meanIm = mean(rec,3);
     lpIm = medfilt2(meanIm,[windowSize,  windowSize]);
-
+%     toc
+%     tic
+%     disp('Temporal')
     temporalNoiseMat = std(rec,0,3);
     temporalNoise = mean(temporalNoiseMat(mask));
     temporalNoiseRel = mean(temporalNoiseMat(mask)./lpIm(mask));
-
+% toc
     if plotFlag
         figure; 
         subplot(4,1,1);
@@ -58,18 +73,20 @@ function [localSpatialNoise, globalSpatialNoise, temporalNoise , localSpatialNoi
 
         % localSpatialNoisePerFrame(k) = mean(stdIm(mask));
     end
+    meanRec = mean(meanImPerFrame);
     % localSpatialNoisePerFrameRel = localSpatialNoisePerFrame./ meanImPerFrame;
     % localSpatialNoise = mean(localSpatialNoisePerFrame);
     % localSpatialNoiseRel = mean(localSpatialNoisePerFrameRel);
     % globalSpatialNoise = mean(globalSpatialNoisePerFrame);
     % globalSpatialNoiseRel = mean(globalSpatialNoisePerFrame./meanImPerFrame);
-
+% disp('Local and Global Spatial')
+% tic
     stdIm = stdfilt(meanIm,true(windowSize));
     localSpatialNoise = mean(stdIm(mask));
     localSpatialNoiseRel = mean2(stdIm(mask)./lpIm(mask));
     globalSpatialNoise = std(meanIm(mask));
     globalSpatialNoiseRel = globalSpatialNoise/mean(lpIm(mask));
-    
+%  toc   
     
     if plotFlag
         subplot(4,1,2);
@@ -92,7 +109,7 @@ function [localSpatialNoise, globalSpatialNoise, temporalNoise , localSpatialNoi
 
     end
 
-    
+  toc  
 
 
 

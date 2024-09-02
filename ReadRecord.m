@@ -36,7 +36,7 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
     if exist(recName,'file') == 7 % it's a folder
         folderpath = recName;
         % find all .tiff or .tif files
-        tiff_files = [ dir([folderpath, '\*.tiff']) , dir([folderpath, '\*.tif']) ];
+        tiff_files = dir([folderpath, '\*.tiff']) ;
         avi_files  = dir([folderpath, '\*.avi']) ;
         if isempty(tiff_files) && isempty(avi_files)
             error(['There are no ''.tiff'' or ''.avi'' files in input folder ''' folderpath '''']);
@@ -46,29 +46,56 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
             if numel(avi_files) > 1
                 error([ '"' folderpath '" must contain only one .avi file but contains ' num2str(numel(avi_files)) ' files.']);
             end
-            rec  = Avi2Matrix( fullfile(folderpath,avi_files.name) ,nOfFrames , startFrame);            
-        elseif ~isempty(tiff_files)
-            rec = Tiff2Matrix(folderpath,nOfFrames,startFrame);
+            [ rec , vH ]  = Avi2Matrix( fullfile(folderpath,avi_files.name) ,nOfFrames , startFrame);
+            nBits = vH.BitsPerPixel;
             
+        elseif ~isempty(tiff_files)
+            [ rec , nBits ] = Tiff2Matrix(folderpath,nOfFrames,startFrame);              
         end
     else % it's a file    
         [~, ~ , ext] = fileparts(recName);
         if strcmp(ext,'.avi')
-            rec = Avi2Matrix( recName ,nOfFrames , startFrame);
+            [ rec , vH ] = Avi2Matrix( recName ,nOfFrames , startFrame);
+            nBits = vH.BitsPerPixel;
         elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
             t = Tiff(recName,'r');
+            nBits = getTag(t,'BitsPerSample');
             rec = read(t);
             close(t);
+            rec = rec(:,:,startFrame:startFrame+nOfFrames-1);                 
+        elseif strcmp(ext,'.mat')
+            D = load(recName);
+            fields = fieldnames(D)  ;
+            if ~startsWith(fields{1},'Video')
+                error('.mat file should contain video field');
+            end
+            rec = D.(fields{1});
+            nBits = 8;
+            if nOfFrames==Inf; nOfFrames = size(rec,3); end
+            if startFrame+nOfFrames-1 > size(rec,3)
+                error('there are not enough frames in file. Required from %d to %d (total %d frames), but record length is %d',startFrame,startFrame+nOfFrames-1,nOfFrames,size(rec,3))
+            end
             rec = rec(:,:,startFrame:startFrame+nOfFrames-1);
         else
-            error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
+            error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi .mat '])
         end
     end
 
     rec = double(rec);
+    if nBits == 16
+        if all(mod(rec(1:400),16) == 0)
+            rec = rec/16; % because Basler camera for some reason uses last 12 bits instead of first
+        end
+    end
     %% Read Info
     if nargout > 1
         info = GetRecordInfo(recName); 
+        if exist('nBits','var')
+            info.nBits = nBits;
+            if info.nBits == 16 
+                info.nBits = 12; % basler camera has Mono12 or Mono8
+            end
+        end
     end
 end
 
