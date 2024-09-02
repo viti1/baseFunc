@@ -63,8 +63,21 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
             rec = read(t);
             close(t);
             rec = rec(:,:,startFrame:startFrame+nOfFrames-1);                 
+        elseif strcmp(ext,'.mat')
+            D = load(recName);
+            fields = fieldnames(D)  ;
+            if ~startsWith(fields{1},'Video')
+                error('.mat file should contain video field');
+            end
+            rec = D.(fields{1});
+            nBits = 8;
+            if nOfFrames==Inf; nOfFrames = size(rec,3); end
+            if startFrame+nOfFrames-1 > size(rec,3)
+                error('there are not enough frames in file. Required from %d to %d (total %d frames), but record length is %d',startFrame,startFrame+nOfFrames-1,nOfFrames,size(rec,3))
+            end
+            rec = rec(:,:,startFrame:startFrame+nOfFrames-1);
         else
-            error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi '])
+            error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi .mat '])
         end
     end
 
@@ -79,7 +92,7 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
         info = GetRecordInfo(recName); 
         if exist('nBits','var')
             info.nBits = nBits;
-            if info.nBits == 16
+            if info.nBits == 16 
                 info.nBits = 12; % basler camera has Mono12 or Mono8
             end
         end
