@@ -8,11 +8,12 @@
 % Adapted from example code given on p10 of WiDy SWIR User Manual 
 
 
-function rec = PTWtoTIFF(file)
+function rec = PTWtoTIFF(file,convertToTiffFlag)
     if nargin < 1
         % Open a Dialogbox to get the database file .ptw
         [filename, pathname] = uigetfile('*.ptw', 'Choose a picture ptw file');
         file = fullfile(pathname,filename);
+        convertToTiffFlag = 1;
     end
     % Initialization of the file pointer.
     fid = fopen(file,'r');
@@ -39,7 +40,7 @@ function rec = PTWtoTIFF(file)
     fseek(fid, LgthFileMainHeader, 'bof');
     % Initialization of a viedo buffer.
     rec = zeros(NbRowImage,NbColImage,Nbimage,'uint16');
-    h = waitbar(0,[filename ' database importation : ' num2str(0) '/' num2str(Nbimage) ]);
+    h = waitbar(0,[strrep(filename,'\','\\') ' database importation : ' num2str(0) '/' num2str(Nbimage) ]);
     % Main Loop
     for i=1:Nbimage 
         waitbar(i/Nbimage,h,[filename ' database importation : ' num2str(i) '/' num2str(Nbimage) ]); % The file pointer fid is incremented by LgthImHeader.
@@ -52,17 +53,19 @@ function rec = PTWtoTIFF(file)
 
 
     % Now the write out routieen
-    h2 = waitbar(0,[filename ' export to tiff : ' num2str(0) '/' num2str(Nbimage) ]);
-    tiffFolderName = fullfile( pathname, [filename '_InGaAsNIT']);
-    mkdir(tiffFolderName);
-    for ii=1:Nbimage
-        waitbar(ii/Nbimage,h2,[filename ' database importation : ' num2str(ii) '/' num2str(Nbimage) ]); % The file pointer fid is incremented by LgthImHeader.
-        writeoutBuff = rec(:,:,ii);
-        if ii==1
-            my_imagesc(writeoutBuff);
+    if convertToTiffFlag
+        h2 = waitbar(0,[filename ' export to tiff : ' num2str(0) '/' num2str(Nbimage) ]);
+        tiffFolderName = fullfile( pathname, [filename '_InGaAsNIT']);
+        mkdir(tiffFolderName);
+        for ii=1:Nbimage
+            waitbar(ii/Nbimage,h2,[filename ' database importation : ' num2str(ii) '/' num2str(Nbimage) ]); % The file pointer fid is incremented by LgthImHeader.
+            writeoutBuff = rec(:,:,ii);
+            if ii==1
+                my_imagesc(writeoutBuff);
+            end
+            imwrite(writeoutBuff,[tiffFolderName,'\frame_',num2str(ii),'.tiff'])
         end
-        imwrite(writeoutBuff,[tiffFolderName,'\frame_',num2str(ii),'.tiff'])
+        close(h2)
+        fclose('all');
     end
-    close(h2)
-    fclose('all');
 end
