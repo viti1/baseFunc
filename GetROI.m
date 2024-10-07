@@ -1,8 +1,8 @@
 function [ mask , circ , figIm ] = GetROI(im)
 
 figIm = my_imagesc(im);
-xlim(size(im,2)*[-0.3 1.3]);
-ylim(size(im,1)*[-0.3 1.3]);
+xlim(size(im,2)*[-0.4 1.4]);
+ylim(size(im,1)*[-0.4 1.4]);
 title('Please draw a circle of ROI');
 % centers = imfindcircles(im,50) 
 %  mask=[]; circ=[];
