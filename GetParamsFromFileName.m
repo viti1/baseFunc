@@ -24,7 +24,8 @@ function finfo = GetParamsFromFileName(recName)
                 finfo.units.(last_valid_param_name) = [ finfo.units.(last_valid_param_name) param_units ];
                 continue;
             else 
-                error(['wrong record name format' , rawName]); 
+                warning(['wrong record name format : ' , rawName]); 
+                continue;
             end
         elseif ~isvarname( param_name ) && ~ismember(param_name,{'try','for','if','catch'}) % -> is not valid param_name for being a field name -> put together with previous 
             if nnz(param_name == stringSepChar)==1 
