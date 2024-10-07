@@ -76,6 +76,9 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
                 error('there are not enough frames in file. Required from %d to %d (total %d frames), but record length is %d',startFrame,startFrame+nOfFrames-1,nOfFrames,size(rec,3))
             end
             rec = rec(:,:,startFrame:startFrame+nOfFrames-1);
+        elseif strcmp(ext,'.ptw')
+            rec = PTWtoTIFF(recName,0);
+            nBits = 14; %true for NIT Camera
         else
             error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi .mat '])
         end
