@@ -23,6 +23,9 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
     if ~exist(recName,'file')
         error(['Record ''' recName ''' do not exist!'])
     end
+    if isstring(recName)
+        recName = char(recName);
+    end
     
     if ~exist('nOfFrames','var') || isempty(nOfFrames)
         nOfFrames = Inf ; % read all record
@@ -86,18 +89,19 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
 
     rec = double(rec);
     if nBits == 16
-        if all(mod(rec(1:400),16) == 0)
-            rec = rec/16; % because Basler camera for some reason uses last 12 bits instead of first
+        if all(mod(rec(1:400),64) == 0)
+            rec = rec/64; % because Basler camera for some reason uses last 12 bits instead of first
+            nBits = 10;
+        elseif all(mod(rec(1:400),16) == 0)
+            rec = rec/16;
+            nBits = 12;
         end
     end
     %% Read Info
     if nargout > 1
         info = GetRecordInfo(recName); 
-        if exist('nBits','var')
+        if ~exist('nBits','var')
             info.nBits = nBits;
-            if info.nBits == 16 
-                info.nBits = 12; % basler camera has Mono12 or Mono8
-            end
         end
     end
 end

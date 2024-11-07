@@ -3,7 +3,7 @@ function WriteAvi(filename,rec,videoFormat,frameRate,info)
 
     if ismember( ndims(rec), [3,2] ) 
         if (exist('videoFormat','var') && strcmp(videoFormat,'Mono8') ) || isa(rec,'uint8')   
-            profile = 'Grayscale AVI';
+            profile = 'Uncompressed AVI'; %'Grayscale AVI';
             rec = uint8(rec);
         elseif ( exist('videoFormat','var') && ismember(videoFormat,strcat('Mono',num2cellstr(9:16)))) || isa(rec,'uint16')
             profile = 'Archival';

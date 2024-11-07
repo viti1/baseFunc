@@ -25,7 +25,7 @@ function totStr = Struct2String(paramS,lut)
     end
     
     totStr = '';
-    if addToFilenameFlag            
+    if addToFilenameFlag && ~isempty(paramS)            
         for pname_cell = fieldnames(paramS)'
             param_name = pname_cell{1};
             

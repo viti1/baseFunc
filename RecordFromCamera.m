@@ -1,4 +1,4 @@
-%% [ rec, filename , info ] = RecordFromCamera ( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid )
+%% [ rec, recName , info ] = RecordFromCamera ( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid )
 % Input : 
 %   nOfFrames - desired number of frames. default = 1
 
@@ -12,7 +12,11 @@
 %               Any parameter that does not appear - the previously defined value will be used.
 %               Special parameter is 'videoFormat', which is not src field but vid field.
 %               If field named 'addToFilename' appeares and it is false, the camParams won't be used in filename.
+%               If addToFilename is struct -> it should contain the fields
+%               as cameraParams that are equal to true or false. If
+%               parameter is abscent - it's default is true
 %               
+%
 %   setupParams - setup parameters such as laserPower, Lensf, Objective and etc..
 %               Used for metadata and for record name construction.
 %               If field named 'addToFilename' appeares and it is false, the setupParams won't be used in filename
@@ -33,10 +37,10 @@
 %   * any of the input parameters can be empty. 
 % Output :
 %   rec      - 3D matrix, double
-%   filename - output full file name (including path)
+%   recName - output full record name (file/folder including path)
 % ``````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````````
 
-function [ rec, filename, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid , beepInterval)
+function [ rec, recName, info ] = RecordFromCamera( nOfFrames, camParams, setupParams, folder, saveFormat, prefix, suffix, overwriteFlag, plotFlag, vid , beepInterval)
 
 %% Check functin input parameters and set defualt values for missing parameters
 
@@ -102,7 +106,7 @@ if exist('folder','var') && ~isempty(folder)
 end
 
 if ~exist('folder','var') || isempty(folder)
-    filename = '';
+    recName = '';
 end
 
 createVid= ~exist('vid','var') || isempty(vid);
@@ -166,7 +170,7 @@ end
 
 %% Create filename from Parameters Structs
 if exist('folder','var') && ~isempty(folder)
-    [filename, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
+    [recName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
 else
     [~, recName] = GenerateFileName('',camParams,setupParams,prefix,suffix,'.tiff',1,src);
 end
@@ -176,14 +180,16 @@ if isfield(camParams,'addToFilename'); camParams = rmfield(camParams,'addToFilen
 if isfield(setupParams,'addToFilename'); setupParams = rmfield(setupParams,'addToFilename'); end
 
 info.cam = camParams; % TBD consider using only user requested + expT,Gain,FR,BL
-mustFieldsToSave = {'Gain','ExposureTime','BlackLevel','AcquisitionFrameRate'} ;
+mustFieldsToSave = {'Gain','ExposureTime','BlackLevel','AcquisitionFrameRate','DeviceSerialNumber'} ;
 for field = mustFieldsToSave(:)'
     if ~isfield(camParams,field{1})
         info.cam.(field{1})= src.(field{1});
     end
 end
 info.setup = setupParams;
-
+info.cameraSN = src.DeviceSerialNumber;
+info.cameraVendor = src.DeviceVendorName;
+info.cameraModel = src.DeviceModelName;
 %% Get images Sequence from Camera
 if exist('folder','var') && ~isempty(folder)
     fprintf('Recording "%s" ... \n',recName);
@@ -272,25 +278,25 @@ if exist('folder','var') && ~isempty(folder)
     end    
 
     % -- Save
-    disp(['Saving "' filename '" ...'])
+    disp(['Saving "' recName '" ...'])
     switch saveFormat
 %         case '.mat'
 %             save(filename,'rec');
 %             save([filename(1:end-4) '_info'] ,'-struct','info');
         case '.tiff'
-            WriteTiffSeq(filename,rec,videoFormat);
-            save([filename '\info.mat'],'-struct','info');
+            WriteTiffSeq(recName,rec,videoFormat);
+            save([recName '\info.mat'],'-struct','info');
 %             prettyjson(info,[filename '\info.json']);
         case '.avi'
-            WriteAvi(filename,rec,videoFormat,info.cam.AcquisitionFrameRate);
-            save([filename '_info.mat'],'-struct','info');
+            WriteAvi(recName,rec,videoFormat,info.cam.AcquisitionFrameRate);
+            save([recName '_info.mat'],'-struct','info');
 %             prettyjson(info,[ filename '_info.json']);
         otherwise
             error('wrong saveFormat, must be .tiff or .mat. or .avi')
     end
     
     if nargout > 2
-        info.name = GetParamsFromFileName(filename); 
+        info.name = GetParamsFromFileName(recName); 
     end
     
     rec = double(rec);
