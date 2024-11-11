@@ -244,24 +244,24 @@ end
 
 %% Save Recording
 recName =  [ recName '\meanIm.mat'];
-% 
-% if exist('folder','var') && ~isempty(folder)
-%     % -- create folder if needed
-%     if ~exist(folder,'dir')
-%         mkdir(folder);
-%     end    
-%   
-%     if ~exist(recName,'dir'); mkdir(recName); end
-%     
-%     if nargout > 2
-%         info.name = GetParamsFromFileName(recName); 
-%     end
-%     
-%     % -- Save
-%     disp(['Saving "' recName '" ...'])
-%     
-%     save( recName , 'recMean','recVar','info');   
-% end
+ 
+if exist('folder','var') && ~isempty(folder)
+    % -- create folder if needed
+    if ~exist(folder,'dir')
+        mkdir(folder);
+    end    
+  
+    if ~exist(recName,'dir'); mkdir(recName); end
+    
+    if nargout > 2
+        info.name = GetParamsFromFileName(recName); 
+    end
+    
+    % -- Save
+    disp(['Saving "' recName '" ...'])
+    
+    save( recName , 'recMean','recVar','info','nOfFrames');   
+end
 close(h_waitbar);
 end 
 
