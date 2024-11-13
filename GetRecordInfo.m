@@ -1,4 +1,6 @@
 function info = GetRecordInfo(recordName)
+%% TBD Vika Add Header
+
     if ~exist(recordName,'file')
         error('Record "%s" does not exist',recordName);
     end
@@ -51,8 +53,8 @@ function info = GetRecordInfo(recordName)
                     info.cameraSN = name_words{2};
                     name_words2 = strsplit(name_words{1},'_');
                     info.cameraModel = name_words2{2};
-                    info.cameraVendor = name_words2{1};
-                end                
+                    info.cameraVendor = name_words2{1};                
+                end
             end
             info.imageSize = [getTag(tH,'ImageLength') getTag(tH,'ImageWidth')];
             close(tH)
@@ -99,4 +101,9 @@ function info = GetRecordInfo(recordName)
         end
     end    
     
-    
+    if ~isfield(info,'cameraSN') && isfield(info.name,'cameraSN')
+        info.cameraSN = info.name.cameraSN;
+        if isnumeric(info.cameraSN)
+            info.cameraSN = num2str(info.cameraSN);
+        end
+    end
