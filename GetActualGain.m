@@ -52,13 +52,25 @@ switch info.cameraSN
 end
 
 
-if ~exist('actualGain','var') || isempty(actualGain)        
-    if contains(recordName,'InGaAsNIT')        
-        maxCapacity = 17e3;% [e]
-        actualGain = ConvertGain(0,14,maxCapacity);
-    else % assume Basler Camera
-        maxCapacity = 10.5e3;% [e]
-        actualGain = ConvertGain(info.name.Gain,info.nBits,maxCapacity);
+if ~exist('actualGain','var') || isempty(actualGain) || isnan(actualGain)
+    if ~isfield(info,'cameraModel')
+        error('no ''cameraModel'' field in info input struct ');
     end
+    
+    switch info.cameraModel
+        case'InGaAsNIT'
+            maxCapacity = 17e3;% [e]
+            info.name.Gain = 0;
+            info.nBits = 14;
+        case 'acA1440-220um'  %  Basler
+            maxCapacity = 10.5e3;% [e]
+        case {'a2A1920-160umPRO','a2A1920-160umBAS'} % Basler
+            maxCapacity = 10.4e3; %[e]
+        case 'acA3088-57um'
+            maxCapacity = 14.4e3;
+        otherwise
+            error('Unknown Camera Model')
+    end
+    actualGain = ConvertGain(info.name.Gain,info.nBits,maxCapacity);
     warning('Using Calculated Gain');
 end
