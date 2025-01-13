@@ -136,6 +136,12 @@ end
 vid.FramesPerTrigger = Inf; 
 src = getselectedsource(vid);
 
+if ismember(camParams,'ROIPosition')
+    vid.ROIPosition = camParams.ROIPosition;
+    disp(['Setting ROIPosition = [' sprintf('%g ',camParams.ROIPosition) ']']);
+    camParams =  rmfield(ROIPosition);
+end
+
 camInputFields = fieldnames(camParams); 
 camInputFields(ismember(camInputFields,{'addToFilename','videoFormat'})) = [];
 camOriginalFields = fieldnames(src);

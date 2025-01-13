@@ -5,8 +5,6 @@
 %   folder - folder to which file should be saved. The parent folder should exist.
 %            if not passed of is empty , record will not be saved.
 %            Name of the file will contain all the parameters.
-%   saveFormat - '.avi' or '.tiff' .  default = '.tiff'
-%                in case of .mat format, the file will start with 'Rec_' prefix
 %   camParams - camera parameters such as exposureTime, Gain, BlackLevel and etc..
 %               Note that the names must follow the camera strtuct src=getselectedsource(vid)
 %               Any parameter that does not appear - the previously defined value will be used.
@@ -103,10 +101,6 @@ if exist('folder','var') && ~isempty(folder)
     end
 end
 
-if ~exist('folder','var') || isempty(folder)
-    recName = '';
-end
-
 createVid= ~exist('vid','var') || isempty(vid);
 
 %% Create vid and set Camera parameters
@@ -167,11 +161,9 @@ if ~isempty(camInputFields)
 end
 
 %% Create filename from Parameters Structs
-if exist('folder','var') && ~isempty(folder)
-    [recName, recShortName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
-else
-    [~, recName] = GenerateFileName('',camParams,setupParams,prefix,suffix,'.tiff',1,src);
-end
+if ~exist('folder','var'); folder=''; end
+[recName, recShortName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,overwriteFlag,src);
+
 %% Create info struct
 if isfield(camParams,'addToFilename'); camParams = rmfield(camParams,'addToFilename'); end
 if isfield(setupParams,'addToFilename'); setupParams = rmfield(setupParams,'addToFilename'); end
@@ -185,7 +177,7 @@ for field = mustFieldsToSave(:)'
 end
 info.setup = setupParams;
 info.cameraSN = src.DeviceSerialNumber;
-
+BlackLevel = src.BlackLevel;
 %% Get images Sequence from Camera
 if exist('folder','var') && ~isempty(folder)
     fprintf('Recording "%s" ... \n',recName);
@@ -205,32 +197,32 @@ h_waitbar = waitbar(0,'Recording ...');
 %Sound Setting
 k=1;
 while k<=nOfFrames 
-    if vid.FramesAvailable
-        im = double(getdata(vid, 1));
-        recSum   = recSum + im ;
-        recSSum  = recSSum + im.^2 ;
-        
-        if mod(k,100)==0
-            fprintf('%d\t',k);
-            waitbar(k/nOfFrames,h_waitbar,['Recording frame ' num2str(k)]);
-        end
-        if mod(k,2000) == 0; fprintf('\n'); end        
+    while ~vid.FramesAvailable ;end 
+    im = double(getdata(vid, 1));
+    recSum   = recSum + im ;
+    recSSum  = recSSum + im.^2 ;
+    
+    if mod(k,100)==0
+        fprintf('%d\t',k);
+        waitbar(k/nOfFrames,h_waitbar,['Recording frame ' num2str(k)]);
     end
+    if mod(k,2000) == 0; fprintf('\n'); end
+    
     k = k+1;
 end
+stop(vid);
+if createVid; delete(vid); end
+
 recMean = recSum/nOfFrames;
 recVar  = recSSum/nOfFrames - recMean.^2;
 % recStd  = sqrt(recVar);
 fprintf('\n');
 %disp(['src.AcquisitionFrameRate = ' num2str(src.AcquisitionFrameRate)] );
 
-stop(vid);
-if createVid; delete(vid); end
 
 waitbar(k/nOfFrames,h_waitbar,'Saving...');
 %% Plot
-if plotFlag
-    
+if plotFlag    
     set(figHandle,'name',recName);
     figure(figHandle);
     imagesc(recMean); colormap gray;
@@ -238,34 +230,28 @@ if plotFlag
     imageAx = gca;
     imageAx.XLim = [0 size(recMean,2)];
     imageAx.YLim = [0 size(recMean,1)];
-    title(recName ,'FontSize',10,'interpreter','none');
+    title(recShortName ,'FontSize',10,'interpreter','none');
     colorbar;
 end
 
 %% Save Recording
-recName =  [ recName '\meanIm.mat'];
- 
 if exist('folder','var') && ~isempty(folder)
     % -- create folder if needed
-    if ~exist(folder,'dir')
-        mkdir(folder);
-    end    
-  
+    if ~exist(folder,'dir'); mkdir(folder); end    
     if ~exist(recName,'dir'); mkdir(recName); end
     
     if nargout > 2
-        info.name = GetParamsFromFileName(recName); 
+        info.name = GetParamsFromFileName(recShortName); 
     end
     
     % -- Save
-    disp(['Saving "' recName '" ...'])
-    
-    save( recName , 'recMean','recVar','info','nOfFrames');   
+    disp(['Saving "' recName '" ...'])    
+    save( [recName '\meanIm.mat'], 'recMean','recVar','info','nOfFrames');   
 end
 close(h_waitbar);
 end 
 
-function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,forceWrite,src)
+function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,forceWrite,src)
     mustFieldsForFilename = {'Gain','ExposureTime'};
     for field = mustFieldsForFilename(:)'
         if ~isfield(camParams,field{1})
@@ -316,9 +302,7 @@ function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,pre
         newIndexStr = sprintf('%0*d',3,newIndex);
         recName = [recNameBase '_' newIndexStr];
     end
-    if ismember(saveFormat,{'avi'})
-        recName = [recName '.avi']; 
-    end
+   
     fullName = fullfile(folder,recName);
 end
 

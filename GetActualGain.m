@@ -46,8 +46,10 @@ switch info.cameraSN
         end
     case '40513592' % Nadav06 a2A1920-160umPRO Camera 
         if info.nBits == 10
-           GainAt16dB = 0.5846;
-           actualGain = GainAt16dB * 10^((info.name.Gain-16)/20); 
+%            GainAt16dB = 0.5846;
+%            actualGain = GainAt16dB * 10^((info.name.Gain-16)/20); 
+           GainAt20dB = 0.920986881323515;
+           actualGain = GainAt20dB * 10^((info.name.Gain-20)/20); 
         end
 end
 
