@@ -22,8 +22,10 @@ function info = GetRecordInfo(recordName)
         % find all .tiff or .tif files
         tiff_files = dir([folderpath, '\*.tiff']) ;
         avi_files  = dir([folderpath, '\*.avi']) ;
-        if isempty(tiff_files) && isempty(avi_files)
-            error(['There are no ''.tiff'' or ''.avi'' files in input folder ''' folderpath '''']);
+        if isempty(tiff_files) && isempty(avi_files) 
+            if  ~exist([recordName '\meanIm.mat'],'file')
+                error(['There are no ''.tiff'' or ''.avi'' files in input folder ''' folderpath '''']);
+            end
         elseif ~isempty(tiff_files) && ~isempty(avi_files)
             error([ '''' folderpath ''' contains both ''.tiff'' or ''.avi'' files. It must contain only one the the file types ' ]);        
         elseif ~isempty(avi_files)
@@ -32,21 +34,24 @@ function info = GetRecordInfo(recordName)
             end
             info.fileType = '.avi';
             vH = VideoReader(fullfile(folderpath,avi_files(1).name) ); 
-            info.nBits = vH.BitsPerPixel; 
+            if ~isfield(info,'nBits')
+                info.nBits = vH.BitsPerPixel; 
+            end
             info.imageSize = [vH.Hight vH.Width];
         elseif ~isempty(tiff_files)
             tH = Tiff(fullfile(folderpath,tiff_files(1).name),'r');
             info.fileType = '.tiff';
-            info.nBits = getTag(tH,'BitsPerSample');
-            if info.nBits == 16
-                im1 = read(tH);
-                if all(mod(im1(1:200),64) == 0)
-                    info.nBits = 10;
-                elseif all(mod(im1(1:200),16) == 0)
-                    info.nBits = 12;
+            if ~isfield(info,'nBits')
+                info.nBits = getTag(tH,'BitsPerSample');
+                if info.nBits == 16
+                    im1 = read(tH);
+                    if all(mod(im1(1:200),64) == 0)
+                        info.nBits = 10;
+                    elseif all(mod(im1(1:200),16) == 0)
+                        info.nBits = 12;
+                    end
                 end
             end
-
             if ~isfield(info,'cameraSN') % if not recorded from matlab - get camera number from the .tiff file names            
                 name_words = strsplit(tiff_files(1).name,'__');
                 if numel(name_words) > 1 && ~isnan(str2double(name_words{2}))
@@ -64,21 +69,24 @@ function info = GetRecordInfo(recordName)
         if strcmp(ext,'.avi')
             vH = VideoReader(recordName ); 
             info.fileType = '.avi';
-            info.nBits = vH.BitsPerPixel;
+            if ~isfield(info,'nBits')
+                info.nBits = vH.BitsPerPixel;
+            end
             info.imageSize = [vH.Hight vH.Width];
         elseif strcmp(ext,'.tiff') || strcmp(ext,'.tif')
             tH = Tiff(recordName,'r');
             info.fileType = '.tiff';
-            info.nBits = tH.BitsPerSample;            
-            if info.nBits == 16
-                im1 = read(tH);
-                if all(mod(im1(1:200),64) == 0)
-                    info.nBits = 10;
-                elseif all(mod(im1(1:200),16) == 0)
-                    info.nBits = 12;
+            if ~isfield(info,'nBits')
+                info.nBits = tH.BitsPerSample;              
+                if info.nBits == 16
+                    im1 = read(tH);
+                    if all(mod(im1(1:200),64) == 0)
+                        info.nBits = 10;
+                    elseif all(mod(im1(1:200),16) == 0)
+                        info.nBits = 12;
+                    end
                 end
             end
-
             info.imageSize = [tH.ImageLength tH.ImageWidth];
             close(tH);  
         elseif strcmp(ext,'.mat')
@@ -88,12 +96,14 @@ function info = GetRecordInfo(recordName)
                 error('.mat file should contain video field');
             end
             info.fileType = '.mat';
-            if isa(D.(fields{1}),'uint8') 
-                info.nBits = 8; 
-%             elseif isa(D.fields{2},'uint16') 
-%                 info.nBits = 16;
-            else
-                error('Recording is unknown number of bits')
+            if ~isfield(info,'nBits')
+                if isa(D.(fields{1}),'uint8')                 
+                        info.nBits = 8;                 
+    %             elseif isa(D.fields{2},'uint16') 
+    %                 info.nBits = 16;
+                else
+                    error('Recording is unknown number of bits')
+                end
             end
             info.imageSize = size(D.(fields{1}),1:2);
         else

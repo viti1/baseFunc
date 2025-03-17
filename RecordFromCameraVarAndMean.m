@@ -123,6 +123,7 @@ end
 
 if createVid
     vid = videoinput("gentl", 1, videoFormat);
+    info.nBits = str2double(videoFormat(5:end));
 end
 
 vid.FramesPerTrigger = Inf; 
@@ -177,7 +178,9 @@ for field = mustFieldsToSave(:)'
 end
 info.setup = setupParams;
 info.cameraSN = src.DeviceSerialNumber;
-BlackLevel = src.BlackLevel;
+info.cameraVendor = src.DeviceVendorName;
+info.cameraModel = src.DeviceModelName;
+
 %% Get images Sequence from Camera
 if exist('folder','var') && ~isempty(folder)
     fprintf('Recording "%s" ... \n',recName);
@@ -247,6 +250,7 @@ if exist('folder','var') && ~isempty(folder)
     % -- Save
     disp(['Saving "' recName '" ...'])    
     save( [recName '\meanIm.mat'], 'recMean','recVar','info','nOfFrames');   
+    save([recName '\info.mat'],'-struct','info');
 end
 close(h_waitbar);
 end 

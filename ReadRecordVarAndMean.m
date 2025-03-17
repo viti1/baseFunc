@@ -82,7 +82,7 @@ function [recMean, recVar, info] = ReadRecordVarAndMean( recName, nOfFrames , st
     recMean = recSum/nOfFrames;
     recVar  = recSSum/nOfFrames - recMean.^2;
     %% Save
-    save([recName '\meanIm.mat'],'recMean','recVar');
+    save([recName '\meanIm.mat'],'recMean','recVar','nOfFrames','nBits');
     
     %% Read Info
     if nargout > 1

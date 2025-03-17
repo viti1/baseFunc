@@ -358,7 +358,7 @@ function [fullName, recName] = GenerateFileName(folder,camParams,setupParams,pre
         else
             newIndex = 0;
         end
-        newIndexStr = sprintf('%0*d',3,newIndex);
+        newIndexStr = sprintf('%0*d',5,newIndex);
         recName = [recNameBase '_' newIndexStr];
     end
     if ismember(saveFormat,{'avi'})

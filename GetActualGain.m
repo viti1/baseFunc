@@ -31,13 +31,13 @@ switch info.cameraSN
         else
             error([' Camera SN' info.cameraSN ' Is 12 or 8 Bits Only']);
         end
-    case '00000000' % Tomoya Camera
+    case '24828238' % Tomoya Camera
         if info.nBits == 12 
-            GainAt16dB = NaN;  % put your value here
-            actualGain = GainAt16dB / 10^(16/20) * 10^(info.name.Gain/20);
+            GainAt24dB = 5.83129475198102;  % put your value here
+            actualGain = GainAt24dB * 10^((info.name.Gain-24)/20);
         elseif info.nBits == 8
-            GainAt20dB = NaN;  % put your value here
-            actualGain = GainAt20dB / 10^(20/20) * 10^(info.name.Gain/20);            
+            GainAt36dB = 1.46868768505221;  % put your value here
+            actualGain = GainAt36dB * 10^((info.name.Gain-36)/20);            
         end
     case '40335401' % Vika Camera
         if info.nBits == 8
@@ -46,10 +46,19 @@ switch info.cameraSN
         end
     case '40513592' % Nadav06 a2A1920-160umPRO Camera 
         if info.nBits == 10
+            if info.name.Gain<=16
 %            GainAt16dB = 0.5846;
-%            actualGain = GainAt16dB * 10^((info.name.Gain-16)/20); 
-           GainAt20dB = 0.920986881323515;
-           actualGain = GainAt20dB * 10^((info.name.Gain-20)/20); 
+                GainAt16dB = 0.58486683824732; % 09/02/25 Marina+Vika Uniform Light 0.1ms
+                actualGain = GainAt16dB * 10^((info.name.Gain-16)/20); 
+            else
+                GainAt18dB = 0.732088235234811; % 09/02/25 Marina+Vika Uniform Light 0.1ms
+                actualGain = GainAt18dB * 10^((info.name.Gain-18)/20);
+            end
+%            GainAt20dB = 0.920986881323515;
+%            actualGain = GainAt20dB * 10^((info.name.Gain-20)/20); 
+        elseif info.nBits == 12
+            GainAt8dB = 0.931317527287469;
+            actualGain = GainAt8dB * 10^((info.name.Gain-8)/20);
         end
 end
 
