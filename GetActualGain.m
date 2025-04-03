@@ -48,7 +48,9 @@ switch info.cameraSN
         if info.nBits == 10
             if info.name.Gain<=16
 %            GainAt16dB = 0.5846;
-                GainAt16dB = 0.58486683824732; % 09/02/25 Marina+Vika Uniform Light 0.1ms
+                %GainAt16dB = 0.58486683824732; % 09/02/25 Marina+Vika Uniform Light 0.1ms
+                GainAt16dB = 0.5831446648063  % Vika 29.03.2025
+
                 actualGain = GainAt16dB * 10^((info.name.Gain-16)/20); 
             else
                 GainAt18dB = 0.732088235234811; % 09/02/25 Marina+Vika Uniform Light 0.1ms
