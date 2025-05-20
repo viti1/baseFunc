@@ -52,14 +52,20 @@ switch info.cameraSN
                 GainAt16dB = 0.5831446648063  % Vika 29.03.2025
 
                 actualGain = GainAt16dB * 10^((info.name.Gain-16)/20); 
-            else
+            elseif info.name.Gain<=19
                 GainAt18dB = 0.732088235234811; % 09/02/25 Marina+Vika Uniform Light 0.1ms
                 actualGain = GainAt18dB * 10^((info.name.Gain-18)/20);
+            else
+               GainAt20dB = 0.920986881323515;
+               actualGain = GainAt20dB * 10^((info.name.Gain-20)/20);
             end
-%            GainAt20dB = 0.920986881323515;
-%            actualGain = GainAt20dB * 10^((info.name.Gain-20)/20); 
         elseif info.nBits == 12
             GainAt8dB = 0.931317527287469;
+            actualGain = GainAt8dB * 10^((info.name.Gain-8)/20);
+        end
+    case '40075248' % LAVI
+        if info.nBits == 12
+            GainAt8dB =  0.95415061637498;
             actualGain = GainAt8dB * 10^((info.name.Gain-8)/20);
         end
 end
