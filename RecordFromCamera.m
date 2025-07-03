@@ -101,7 +101,11 @@ if exist('folder','var') && ~isempty(folder)
     elseif ~ischar(folder) && ~isstring(folder)
         error('Input folder must be a char array or a string');
     elseif  exist(fileparts(folder),'dir') ~= 7
-        error('The parent folder of the destination folder must exist');
+        if exist(fileparts(fileparts(folder)),'dir') == 7
+            mkdir(fileparts(folder))
+        else
+            error('The grandparent folder of the destination folder (%s)  must exist' , fileparts(fileparts(folder)));
+        end
     end
 end
 
@@ -136,7 +140,7 @@ end
 vid.FramesPerTrigger = Inf; 
 src = getselectedsource(vid);
 
-if ismember(camParams,'ROIPosition')
+if any(ismember(fieldnames(camParams),'ROIPosition'))
     vid.ROIPosition = camParams.ROIPosition;
     disp(['Setting ROIPosition = [' sprintf('%g ',camParams.ROIPosition) ']']);
     camParams =  rmfield(ROIPosition);
@@ -176,7 +180,7 @@ end
 
 %% Create filename from Parameters Structs
 if exist('folder','var') && ~isempty(folder)
-    [recName, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
+    [recNameFull, recName] = GenerateFileName(folder,camParams,setupParams,prefix,suffix,saveFormat,overwriteFlag,src);
 else
     [~, recName] = GenerateFileName('',camParams,setupParams,prefix,suffix,'.tiff',1,src);
 end
@@ -196,9 +200,11 @@ info.setup = setupParams;
 info.cameraSN = src.DeviceSerialNumber;
 info.cameraVendor = src.DeviceVendorName;
 info.cameraModel = src.DeviceModelName;
+info.nBits = str2double(videoFormat(5:end));
+
 %% Get images Sequence from Camera
 if exist('folder','var') && ~isempty(folder)
-    fprintf('Recording "%s" ... \n',recName);
+    fprintf('Recording "%s" ... \n',recNameFull);
 end
 start(vid);
 
@@ -208,7 +214,7 @@ imagesBuff = getdata(vid, vid.FramesAvailable);
 rec = zeros(size(imagesBuff,1),size(imagesBuff,2),nOfFrames);
 if strcmp(videoFormat,'Mono8')
     rec = uint8(rec);
-elseif strcmp(videoFormat,'Mono12')
+elseif strcmp(videoFormat,'Mono12') || strcmp(videoFormat,'Mono10')
     rec = uint16(rec);
 end
 
@@ -233,7 +239,7 @@ while k <= nOfFrames
             buffSize = size(currImagesBuff,4);
             if strcmp(videoFormat,'Mono8')
                 currImage = uint8(squeeze(currImagesBuff));
-            elseif strcmp(videoFormat,'Mono12')
+            elseif strcmp(videoFormat,'Mono12') || strcmp(videoFormat,'Mono10')
                 currImage = uint16(squeeze(currImagesBuff));
             end            
             rec(:,:,k:k+buffSize-1) = currImage;
@@ -263,8 +269,7 @@ end
 
 waitbar(k/nOfFrames,h_waitbar,'Saving...');
 %% Plot
-if plotFlag
-    
+if plotFlag    
     set(figHandle,'name',recName);
     figure(figHandle);
     imagesc(rec(:,:,end)); colormap gray;
@@ -272,37 +277,37 @@ if plotFlag
     imageAx = gca;
     imageAx.XLim = [0 size(rec,2)];
     imageAx.YLim = [0 size(rec,1)];
-    title({recName ; sprintf('frame %d',size(rec,3))},'FontSize',10,'interpreter','none');
+    title({strrep(recName,'_',' ') ; sprintf('frame %d',size(rec,3))},'FontSize',10,'interpreter','none');
     colorbar;
 end
 
 %% Save Recording
 if exist('folder','var') && ~isempty(folder)
     % -- create folder if needed
-    if ~exist(folder,'dir')
+    if ~exist(folder,'dir')        
         mkdir(folder);
     end    
 
     % -- Save
-    disp(['Saving "' recName '" ...'])
+    disp(['Saving "' recNameFull '" ...'])
     switch saveFormat
 %         case '.mat'
 %             save(filename,'rec');
 %             save([filename(1:end-4) '_info'] ,'-struct','info');
         case '.tiff'
-            WriteTiffSeq(recName,rec,videoFormat);
-            save([recName '\info.mat'],'-struct','info');
+            WriteTiffSeq(recNameFull,rec,videoFormat);
+            save([recNameFull '\info.mat'],'-struct','info');
 %             prettyjson(info,[filename '\info.json']);
         case '.avi'
-            WriteAvi(recName,rec,videoFormat,info.cam.AcquisitionFrameRate);
-            save([recName '_info.mat'],'-struct','info');
+            WriteAvi(recNameFull,rec,videoFormat,info.cam.AcquisitionFrameRate);
+            save([recNameFull '_info.mat'],'-struct','info');
 %             prettyjson(info,[ filename '_info.json']);
         otherwise
             error('wrong saveFormat, must be .tiff or .mat. or .avi')
     end
     
     if nargout > 2
-        info.name = GetParamsFromFileName(recName); 
+        info.name = GetParamsFromFileName(recName);         
     end
     
     rec = double(rec);
