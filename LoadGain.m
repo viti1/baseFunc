@@ -3,11 +3,11 @@ function actualGain = LoadGain(info,gainDataFile)
 % Input :  info - struct that should contain the following fields:
 %                 'nBits' 
 %                 'name.Gain'  
-%                 'info.cameraSN'
-%                 'info.cameraModel'
+%                 'cameraSN'
+%                 'cameraModel'
 %          gainDataFile - .csv or .txt file that can be loaded as table, contains measured values of Gain [DU/e]
 %                         have the following columns : cameraSN, gain_dB, measuredG
-%                         default : '.\CamerasMeasuredGain.csv'
+%                         default : [mfilelocation '\CamerasMeasuredGain.csv']
 %  
 % Output : actualGain - the [DU] to [e] conversion constant , measured or calculated
 
@@ -25,7 +25,6 @@ end
 
 %% get measured Gain
 T = readtable(gainDataFile);
-
 db_vs_G = T{T.nBits == info.nBits & ismember(T.cameraSN,str2double(info.cameraSN)), {'gain_dB', 'measuredG'}};
 
 if ~isempty(db_vs_G)
