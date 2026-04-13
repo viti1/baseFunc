@@ -1,4 +1,4 @@
-function actualGain = LoadGain(info,gainDataFile)
+function actualGain = LoadG(info,gainDataFile)
 
 % Input :  info - struct that should contain the following fields:
 %                 'nBits' 
@@ -9,7 +9,7 @@ function actualGain = LoadGain(info,gainDataFile)
 %                         have the following columns : cameraSN, gain_dB, measuredG
 %                         default : [mfilelocation '\CamerasMeasuredGain.csv']
 %  
-% Output : actualGain - the [DU] to [e] conversion constant , measured or calculated
+% Output : actualG - the [DU] to [e] conversion constant , measured or calculated
 
 %% Check Input
 requiredFields = {'nBits' , 'cameraSN' , 'cameraModel' };
@@ -26,7 +26,6 @@ if isfield(info,'name') && isfield(info.name,'Gain')
     else
         info.Gain = info.name.Gain;
     end
-
 end
 if isnan(str2double(info.cameraSN))
     error('wrong info.cameraSN')
@@ -41,7 +40,7 @@ if ~exist('gainDataFile','var')
     end
 end
 
-%% get measured Gain
+%% get measured G
 T = readtable(gainDataFile);
 db_vs_G = T{T.nBits == info.nBits & ismember(T.cameraSN,str2double(info.cameraSN)), {'gain_dB', 'measuredG'}};
 
