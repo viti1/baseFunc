@@ -1,4 +1,4 @@
-function actualGain = LoadG(info,gainDataFile)
+function actualG = LoadG(info,gainDataFile)
 
 % Input :  info - struct that should contain the following fields:
 %                 'nBits' 
@@ -9,7 +9,7 @@ function actualGain = LoadG(info,gainDataFile)
 %                         have the following columns : cameraSN, gain_dB, measuredG
 %                         default : [mfilelocation '\CamerasMeasuredGain.csv']
 %  
-% Output : actualG - the [DU] to [e] conversion constant , measured or calculated
+% Output : actualG - the Digital Units to electrons [DU/e] conversion constant , measured or calculated
 
 %% Check Input
 requiredFields = {'nBits' , 'cameraSN' , 'cameraModel' };
@@ -49,7 +49,7 @@ if ~isempty(db_vs_G)
     [~, ind_ClosestGaininTable] = min( abs(db_vs_G(:,1) - info.Gain) ) ;
     ClosestGaininTable = db_vs_G(ind_ClosestGaininTable,1);
     G_atClosestGain = db_vs_G(ind_ClosestGaininTable,2);
-    actualGain =  G_atClosestGain * 10^((info.Gain-ClosestGaininTable)/20);
+    actualG =  G_atClosestGain * 10^((info.Gain-ClosestGaininTable)/20);
 
     if ~ismember( info.Gain,db_vs_G(:,1) )
         warning('CameraSN+nBits+Gain[dB] not in G[DU/e] table : Using Calculated G[DU/e] for that camera and nBits');
@@ -74,6 +74,6 @@ else
         otherwise
             error('Unknown Camera Model')
     end
-    actualGain = ConvertGain(info.Gain,info.nBits,maxCapacity);
-    warning('CameraSN+nBits not in G[DU/e] table : Using Calculated G[DU/e]');
+    actualG = ConvertGain(info.Gain,info.nBits,maxCapacity);
+    warning('CameraSN+nBits not in G[DU/e] table : Using Calculated G[DU/e] based only on Camera Model - NOT RECOMMENDED!! Please calibrate G[DU/e] for that camera + nBits + Gain');
 end
