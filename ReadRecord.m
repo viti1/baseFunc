@@ -83,7 +83,7 @@ function [rec, info] = ReadRecord( recName, nOfFrames , startFrame)
             rec = PTWtoTIFF(recName,0);
             nBits = 14; %true for NIT Camera
         else
-            error(['Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi .mat '])
+            error([recName ' : Unsupported file type ' ext  ' . Supported types are .tif .tiff .avi .mat '])
         end
     end
 
